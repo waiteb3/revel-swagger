@@ -50,7 +50,8 @@ func (c Swaggify) ServeUI(basePath string) revel.Result {
 		}
 	}
 
-	c.RenderArgs["Endpoint"] = c.Request.URL.Path
+	// TODO find better way to do this
+	c.RenderArgs["SpecFile"] = c.Request.URL.Path + "swagger.json"
 	return &revel.RenderTemplateResult{
 		Template:   IndexTemplate,
 		RenderArgs: c.RenderArgs,

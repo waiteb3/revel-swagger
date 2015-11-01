@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-swagger/go-swagger/spec"
+	"github.com/revel/cmd/harness"
 	"github.com/revel/revel"
 )
 
@@ -16,8 +17,11 @@ var AssetsPath string
 var ViewsPath string
 var APIs = make(map[string]*spec.Swagger)
 
-// TODO delete or not
-var IndexArgs = make(map[string]interface{})
+// TODO try to add manual defintion override identified by something like x-revel-controller.yml or comments or ????
+
+// TODO interceptor for getting statistics on endpoints
+// TODO create filter (maybe)
+var ContentTypes = []string{"application/json", "application/xml"}
 
 func init() {
 	_, ModulePath, _, _ = runtime.Caller(1)
@@ -40,50 +44,57 @@ func start() {
 	}
 
 	for _, route := range routes {
-		// TODO test what happens on panic
-		// TODO enable defaults
-		// TODO complete swagger metadata and move to diff function
-		// the Swagger type hoists unexported types for some annoying reason
-		api := new(spec.Swagger)
-		api.Swagger = "2.0"
-
-		api.Info = new(spec.Info)
-		api.Info.Version = "0.0.0"
-		api.Info.Title = revel.AppName
-		api.Info.Description = "Description"
-		api.Info.TermsOfService = "http://swagger.io/terms/"
-
-		api.Info.Contact = new(spec.ContactInfo)
-		api.Info.Contact.Name = ""
-		api.Info.Contact.Email = ""
-		api.Info.Contact.URL = ""
-
-		api.Info.License = new(spec.License)
-		api.Info.License.Name = "LICENSE"
-		api.Info.License.URL = "URL"
-
-		// TODO change
-		api.Host = revel.AppName
-		// TODO check if https is HSTS exclusively or no for revel
-		// ALSO this can be SSL terminated by proxy so this may need changing
-		if revel.HttpSsl {
-			api.Schemes = []string{"https"}
-		} else {
-			api.Schemes = []string{"http"}
+		// TODO test what cases cause bounds panic
+		// Don't duplicate building API specs
+		if _, exists := APIs[route.FixedParams[0]]; exists {
+			continue
 		}
 
-		// TODO configurable: JSON only for now
-		api.Consumes = []string{"json"}
-		api.Produces = []string{"json"}
-
-		api.BasePath = route.FixedParams[0]
-
-		api.Paths = buildPaths(api.BasePath)
-		api.Definitions = buildDefinitions(api.BasePath)
-
-		APIs[api.BasePath] = api
-		fmt.Println(api)
+		APIs[route.FixedParams[0]] = newSpec(route.FixedParams[0])
+		fmt.Println(APIs[route.FixedParams[0]])
 	}
+}
+
+func newSpec(endpoint string) *spec.Swagger {
+	// TODO enable defaults
+	// TODO complete swagger metadata and move to diff function
+	api := new(spec.Swagger)
+	api.Swagger = "2.0"
+	api.BasePath = endpoint
+
+	api.Info = new(spec.Info)
+	api.Info.Version = "0.0.0"
+	api.Info.Title = revel.AppName
+	api.Info.Description = "Description"
+	api.Info.TermsOfService = "http://swagger.io/terms/"
+
+	api.Info.Contact = new(spec.ContactInfo)
+	api.Info.Contact.Name = ""
+	api.Info.Contact.Email = ""
+	api.Info.Contact.URL = ""
+
+	api.Info.License = new(spec.License)
+	api.Info.License.Name = "LICENSE"
+	api.Info.License.URL = "URL"
+
+	// TODO change lols
+	api.Host = "localhost:9000"
+	// TODO check if https is HSTS exclusively or no for revel
+	// ALSO this can be SSL terminated by proxy so this may need changing
+	if revel.HttpSsl {
+		api.Schemes = []string{"https"}
+	} else {
+		api.Schemes = []string{"http"}
+	}
+
+	api.Consumes = ContentTypes
+	api.Produces = ContentTypes
+
+	// the Swagger type hoists unexported types for some annoying reason
+	api.Paths = buildPaths(api.BasePath)
+	api.Definitions = buildDefinitions(api.BasePath)
+
+	return api
 }
 
 // buildPaths of a swagger spec based on the parsed revel routes and the basePath
@@ -92,35 +103,133 @@ func buildPaths(endpoint string) *spec.Paths {
 
 	paths.Paths = make(map[string]spec.PathItem)
 
-	/*
-	   "paths": {
-	     "/pets": {
-	       "get": {
-	         "description": "Returns all pets from the system that the user has access to",
-	         "produces": [
-	           "application/json"
-	         ],
-	         "responses": {
-	           "200": {
-	             "description": "A list of pets.",
-	             "schema": {
-	               "type": "array",
-	               "items": {
-	                 "$ref": "#/definitions/Pet"
-	               }
-	             }
-	           }
-	         }
-	       }
-	     }
-	   },
-	*/
+	for _, route := range revel.MainRouter.Routes {
+		// swagger uses curly braces and prepends the basePath
+		if strings.HasPrefix(route.Path, endpoint) {
+			swaggerPath := curlify(endpoint, route.Path)
+			// match only routes in the endpoint
+			fmt.Println()
+			fmt.Println("endpoint", route)
+
+			// missing values returns an empty struct
+			path := paths.Paths[swaggerPath]
+			// TODO MAYBE path.Extensions
+			switch strings.ToUpper(route.Method) {
+			case "HEAD":
+				path.Head = buildOperation(route)
+			case "GET":
+				path.Get = buildOperation(route)
+			case "POST":
+				path.Post = buildOperation(route)
+			case "PUT":
+				path.Put = buildOperation(route)
+			case "DELETE":
+				path.Delete = buildOperation(route)
+			case "PATCH":
+				path.Patch = buildOperation(route)
+			case "OPTIONS":
+				path.Options = buildOperation(route)
+			case "*":
+				path.Head = buildOperation(route)
+				path.Get = path.Head
+				path.Post = path.Head
+				path.Put = path.Head
+				path.Delete = path.Head
+				path.Patch = path.Head
+			default:
+				panic("Invalid Request type ?? " + route.Method)
+			}
+			paths.Paths[swaggerPath] = path
+		}
+	}
 
 	return paths
 }
 
+func buildOperation(route *revel.Route) *spec.Operation {
+	var (
+		typeInfo   *harness.TypeInfo
+		methodSpec *harness.MethodSpec
+	)
+
+	info, rerr := harness.ProcessSource(revel.CodePaths)
+	if rerr != nil {
+		panic(rerr) // TODO EMPTY PANIC
+	}
+
+	// get the TypeInfo and MethodSpec for this route
+	for _, cinfo := range info.ControllerSpecs() {
+		typeInfo = cinfo // TODO move inside if (get around compiler complaint)
+		if route.ControllerName == typeInfo.StructName {
+			for _, spec := range cinfo.MethodSpecs {
+				if route.MethodName == spec.Name {
+					methodSpec = spec
+					break
+				}
+			}
+			break
+		}
+	}
+
+	op := new(spec.Operation)
+	// TODO op.Description
+	// this will probably require either editing harness.ProcessSource to also grab comments OR
+	// to copy that functionality and modify it
+	op.Consumes = ContentTypes
+	op.Produces = ContentTypes
+	op.AddExtension("x-revel-action", route.Action)
+
+	for i, arg := range methodSpec.Args {
+		// skip over fixed paramters that match up to the arguments
+		if i < len(route.FixedParams) {
+			continue
+		}
+		var param spec.Parameter
+		param.Name = arg.Name
+		param.Type = arg.TypeExpr.Expr
+
+		// TODO review
+		// TODO: better path vs query vs body vs multipart
+		count := strings.Count(route.Path, ":") + strings.Count(route.Path, "*")
+		if i < count {
+			param.In = "path"
+		} else {
+			param.In = "body"
+		}
+		op.Parameters = append(op.Parameters, param)
+	}
+
+	// TODO RenderCalls
+	// fmt.Printf("route:       %#v\n", route)
+	// fmt.Printf("typeInfo:    %#v\n", typeInfo)
+	// fmt.Printf("methodSpec: %#v\n", methodSpec)
+	// for _, call := range methodSpec.RenderCalls {
+	// 	fmt.Printf("\tcall: %#v\n", call)
+	// }
+
+	/*
+		"responses": {
+		  "200": {
+		    "description": "A list of pets.",
+		    "schema": {
+		      "type": "array",
+		      "items": {
+		        "$ref": "#/definitions/Pet"
+		      }
+		    }
+		  }
+		}
+	*/
+
+	return op
+}
+
+// TODO Parse the models and contollers for potential definitions?
 func buildDefinitions(endpoint string) spec.Definitions {
 	def := spec.Definitions{}
+
+	// TODO
+	// info, err := harness.ProcessSource(revel.CodePaths...)
 	/*
 	   "definitions": {
 	     "Pet": {
@@ -146,4 +255,15 @@ func buildDefinitions(endpoint string) spec.Definitions {
 	 }
 	*/
 	return def
+}
+
+func curlify(endpoint, path string) string {
+	path = strings.TrimPrefix(path, endpoint)
+	parts := strings.SplitAfter(path, "/")
+	for i, part := range parts {
+		if strings.HasPrefix(part, ":") || strings.HasPrefix(part, "*") {
+			parts[i] = "{" + part[1:] + "}"
+		}
+	}
+	return strings.Join(parts, "")
 }

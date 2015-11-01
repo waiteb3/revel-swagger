@@ -1,0 +1,49 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+module:testrunner
+
+###########################
+#         Swagger         #
+###########################
+# This will serve the generated swagger spec built from from any route with
+# a basePath of "/api" and spec accessible at "/@api/swagger.json"
+GET     /@api/swagger.json                      Swaggify.Spec("/api")
+# Serve the default swagger-ui based on the prefix ("/api")
+GET     /@api/                                  Swaggify.ServeUI("/api")
+GET     /@api/*filepath                         Swaggify.ServeAssets("/api")
+
+###########################
+#  Custom Swagger Assets  #
+###########################
+# Serve your own custom swagger-ui based on https://github.com/swagger-api/swagger-ui/tree/master/dist
+# Generated swagger.json spec endpoint
+# GET     /@api/v1/swagger.json                  Swaggerify.Spec("/api/v1")
+# UI and Assets
+# GET     /@api/v1/                              Static.Serve("swagger-ui", "index.html")
+# GET     /@api/v1/*filepath                     Static.Serve("myapp/swagger-ui")
+
+##########################
+#       API routes       #
+##########################
+GET     /api/items                              ItemController.List
+POST    /api/items                              ItemController.Create
+GET     /api/item/:id                           ItemController.Get
+PUT     /api/item/:id                           ItemController.Update
+DELETE  /api/item/:id                           ItemController.Delete
+PATCH   /api/item/:id                           ItemController.Modify
+
+###########################
+#   Serve UI from index   #
+###########################
+# TODO find better way to do this (see module/app/controllers/swaggerify.Spec)
+GET     /swagger.json                           Swaggify.Spec("/api")
+GET     /                                       Swaggify.ServeUI("/api")
+GET     /*filepath                              Swaggify.ServeAssets("/api")
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Catch all
+*       /:controller/:action                    :controller.:action

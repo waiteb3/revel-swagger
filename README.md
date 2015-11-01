@@ -12,8 +12,8 @@ module.swaggify=github.com/waiteb3/revel-swagger/modules/swaggify
 
 Drop the endpoints into `conf/routes`
 ```
-# This will serve the generated swagger spec generated from routes with the basePath "/api"
-# and spec accessible at "/@api/swagger.json"
+# This will serve the generated swagger spec built from from any route with
+# a basePath of "/api" and spec accessible at "/@api/swagger.json"
 GET     /@api/swagger.json                      Swaggify.Spec("/api")
 # Serve the default swagger-ui based on the prefix ("/api")
 GET     /@api/	                                Swaggify.ServeUI("/api")
