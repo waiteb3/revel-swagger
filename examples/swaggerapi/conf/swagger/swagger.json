@@ -1,0 +1,29 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Example API",
+        "description": "Example API to demonstrate the SwaggerAPI module for revel",
+        "version": "1.0.0"
+    },
+    "host": "localhost:9000",
+    "basePath": "/api",
+    "schemes": [
+        "http"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/endpoint": {
+            "get": {
+                "x-revel-controller-action": "App.Endpoint",
+                "description": "Prints a simple message\n",
+                "responses": {
+                    "200": {
+                        "description": "A simple response"
+                    }
+                }
+            }
+        }
+    }
+}

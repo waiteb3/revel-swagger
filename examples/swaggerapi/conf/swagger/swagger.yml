@@ -1,0 +1,110 @@
+swagger: '2.0'
+info:
+  title: Example API
+  description: Example API to demonstrate the SwaggerAPI module for revel
+  version: 1.0.0
+host: localhost:9000
+basePath: /api
+schemes:
+  - http
+produces:
+  - application/json
+paths:
+  /endpoint:
+    get:
+      x-revel-controller-action: App.Endpoint
+      description: |
+        Prints a simple message
+      responses:
+        '200':
+          description: A simple response
+          schema:
+            $ref: '#/definitions/Message'
+  /items:
+    get:
+      x-revel-controller-action: Items.List
+      description: List of all items
+      responses:
+        '200':
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Item'
+    post:
+      x-revel-controller-action: Items.Create
+      description: Creates a new item with name `name`
+      parameters:
+        - in: body
+          name: name
+          description: the item's name
+          type: string
+      responses:
+        '200':
+          schema:
+            $ref: '#/definitions/Item'
+  /items/{id}:
+    get:
+      x-revel-controller-action: Items.Read
+      description: Read a new item with {id}
+      parameters:
+        - in: path
+          name: id
+          description: the item's id
+          type: integer
+      responses:
+        '200':
+          schema:
+            $ref: '#/definitions/Item'
+        '404':
+          schema:
+            $ref: '#/definitions/RevelError'
+    put:
+      x-revel-controller-action: Items.Update
+      description: Updates a new item with {id}
+      parameters:
+        - in: path
+          name: id
+          description: the item's id
+          type: integer
+        - in: body
+          name: name
+          description: the item's new name
+          type: string
+      responses:
+        '200':
+          schema:
+            $ref: '#/definitions/Item'
+        '404':
+          schema:
+            $ref: '#/definitions/RevelError'
+    delete:
+      x-revel-controller-action: Items.Delete
+      description: Deletes a new item with {id}
+      parameters:
+        - in: path
+          name: id
+          description: the item's id
+          type: integer
+      responses:
+        '200':
+          schema:
+            $ref: '#/definitions/Item'
+        '404':
+          schema:
+            $ref: '#/definitions/RevelError'
+definitions:
+  Message:
+    type: object
+    properties:
+      message:
+        type: string
+  Item:
+    type: object
+    properties:
+      id:
+        type: integer
+        minimum: 0
+      name:
+        type: string
+  RevelError:
+    type: object

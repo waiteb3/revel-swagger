@@ -1,0 +1,23 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+module:testrunner
+
+GET     /                                       App.Index
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/*filepath                       Static.Serve("public")
+
+
+# Custom Swagger UI
+GET /@custom/swagger.json                       Static.Serve("conf/swagger","swagger.json")
+GET /@custom/                                   Static.Serve("public/swagger-ui/dist","index.html")
+GET /@custom/*filepath                          Static.Serve("public/swagger-ui/dist")
+
+# TODO this will break dynamically added routes
+# Catch all
+# *       /:controller/:action                    :controller.:action
