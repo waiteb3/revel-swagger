@@ -14,19 +14,23 @@ import (
 
 var ModulePath string
 
+// SpecPaths is a map of the absolute paths of specifications so they can be served
+var SpecPaths = make(map[string]string)
+
 // the extension for defined revel controller actions on swagger paths
 const X_REVEL_CONTROLLER_ACTION = "x-revel-controller-action"
 
 // init creates routes based on swagger specs defined in the conf/swagger folder
 // it will create asset endpoints at /@basePath for serving the swagger-spec and UI
 // which can be overridden with swaggerapi.addui = false
+// TODO look into adding a watcher
+// TODO re-add /:controller/:action catchall
 func init() {
 	_, ModulePath, _, _ = runtime.Caller(1)
 	ModulePath = filepath.Join(path.Dir(ModulePath), "swagger-ui", "dist")
+	revel.INFO.Println("basepath", revel.BasePath)
 
 	revel.OnAppStart(func() {
-		// TODO look into alternatives rather than than using the config (maybe)
-
 		// TODO find out why AppRoot is empty
 		//doc, err := spec.Load(filepath.Join(revel.AppRoot, "conf", "swagger", "swagger.yml"))
 		//fmt.Println(revel.AppRoot, filepath.Join(revel.AppRoot, "conf", "swagger", "swagger.yml"))
@@ -43,10 +47,11 @@ func init() {
 					_panic(err)
 				}
 
+				SpecPaths[config] = filepath.Join(path, config)
 				// TODO decide if multiple of same name is allowed or not
 				// if found { }
 
-				if revel.Config.BoolDefault("swaggerapi.no-ui", true) {
+				if revel.Config.BoolDefault("swaggerapi.add-ui", true) {
 					AddSwaggerUi(doc.BasePath(), config)
 				}
 
@@ -54,7 +59,7 @@ func init() {
 				found = true
 			}
 			if !found {
-				_panic(fmt.Errorf("Swagger configuration '%s' not found found in any folder of these folders:\t%v",
+				_panic(fmt.Errorf("Swagger configuration '%s' not found found in any of these folders:\t%v",
 					config, configs))
 			}
 		}
@@ -68,7 +73,6 @@ func AddSwaggerRoutes(doc *spec.Document) {
 		// TODO may be something usable here?
 		// if extension, ok := pathItem.Extensions.GetString("x-revel-controller"); ok { }
 
-		// TODO think on how to clena this up some more
 		if pathItem.Head != nil {
 			if action, ok := pathItem.Head.Extensions.GetString(X_REVEL_CONTROLLER_ACTION); ok {
 				_panic(addRoute(action, "HEAD", path))
@@ -120,7 +124,7 @@ func AddSwaggerUi(basePath, filename string) {
 	// TODO don't stop down already defined /@path's
 	// leaf, _ := revel.MainRouter.Tree.Find(basePath + "/" + filename)
 	_panic(addRoute("SwaggerAPI.Spec", "GET", basePath+"/"+filename,
-		filepath.Join("conf", filename)))
+		filename))
 
 	_panic(addRoute("SwaggerAPI.ServeUI", "GET", basePath+"/",
 		filename))
@@ -137,11 +141,12 @@ func addRoute(action, method, path string, params ...string) error {
 	}
 
 	ControllerName, MethodName := action[:i], action[i+1:]
-	return revel.MainRouter.Tree.Add("/"+method+path, &revel.Route{
+	treePath := "/" + method + path
+	return revel.MainRouter.Tree.Add(treePath, &revel.Route{
 		Action:         action,
 		ControllerName: ControllerName,
 		Path:           path,
-		TreePath:       "/" + method + path,
+		TreePath:       treePath,
 		Method:         method,
 		MethodName:     MethodName,
 		FixedParams:    params,
@@ -158,7 +163,6 @@ func deCurly(path string) string {
 		return r
 	}, path)
 	path = strings.Replace(path, "}", "", -1)
-	fmt.Println("deCurly", path)
 	return path
 }
 
@@ -171,7 +175,7 @@ func insertAtSymbol(basePath string) string {
 	return basePath[:1] + "@" + basePath[1:]
 }
 
-// basically goto fail =)
+// TODO get rid of what is basically a goto fail =)
 func _panic(err error) {
 	if err != nil {
 		panic(err)

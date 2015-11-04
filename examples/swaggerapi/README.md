@@ -4,35 +4,25 @@
 
 A high-productivity web framework for the [Go language](http://www.golang.org/).
 
-The World's Most Popular Framework for APIs. [Swagger API](http://swagger.io)
+The World's Most Popular Framework for APIs. [Swagger](http://swagger.io)
+
+For all of the module's details and instructions, go to the [README.md](modules/swaggerapi/README.md).
 
 ### Start the web server:
 
 ```
 go get github.com/revel/cmd/revel
-go get github.com/waiteb3/revel-swagger/...
+go get github.com/waiteb3/revel-swagger/examples/swaggerapi/...
 revel run github.com/waiteb3/revel-swagger/examples/swaggerapi
 ```
 
 Then go to [http://localhost:9000/@api/](http://localhost:9000/@api/) and you'll see
 the example SwaggerAPI's UI for this projects swagger definition.
 
-### Custom UI
+Or you can go to [http://localhost:9000/@custom/](http://localhost:9000/@custom/) to see an example of a custom Swagger UI. [Instructions](modules/swaggerapi/README.md#custom-ui) on how to add your own Swagger UI distribution.
 
-You can use Static.Serve (the offical Revel module) to serve your UI.
 
-Example from the routes file
-```
-# Custom Swagger UI
-GET /@custom/swagger.json                       Static.Serve("conf/swagger","swagger.json"
-GET /@custom/                                   Static.Serve("public/swagger-ui/dist","index.html")
-GET /@custom/*filepath                          Static.Serve("public/swagger-ui/dist")
-```
-
-Then go to [http://localhost:9000/@custom/](http://localhost:9000/@custom/) to see
-the custom UI.
-
-Thanks to https://github.com/jensoleg/swagger-ui for a modified swagger-ui to demo with.
+Thanks to [https://github.com/jensoleg/swagger-ui](https://github.com/jensoleg/swagger-ui) for a modified swagger-ui to demo with.
 
 ### Description of Contents
 
@@ -80,7 +70,8 @@ controllers
 
     The implementations for controller-actions that can be invoked by a pathItem's 'x-revel-controller-action' extension definition.
 
-    * api.go, the App.Endpoint implementation for [examples/swaggerapi/conf/swagger.yml#L22](the swagger spec)
+    * api.go, the App.Endpoint implementation for [the swagger spec](examples/swaggerapi/conf/swagger/swagger.yml#L15)
+    * items.go, the Items.{_Action_} implementations for [the swagger spec](examples/swaggerapi/conf/swagger/swagger.yml#L25)
 
 public
 

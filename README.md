@@ -3,6 +3,7 @@ Two drop in Revel modules for Swagger integration
 
 ## Modules quickstart
 
+First grab the modules
 ```
 go get github.com/waiteb3/revel-swagger/modules/...
 ```
@@ -11,20 +12,27 @@ go get github.com/waiteb3/revel-swagger/modules/...
 
 Add the module and spec locations to `app.conf`
 ```
+# Add the module
 module.swaggerapi=github.com/waiteb3/revel-swagger/modules/swaggerapi
-swaggerapi.specs=swagger/swagger.yml
+# Include your spec relative from the conf/ folder
+swaggerapi.specs=swagger.yml
 ```
 
-Add your Swagger-Spec file to the `conf/swagger` folder
+Add your Swagger-Spec file to the `swagger` folder
 ```
-ls conf/swagger
+ls conf
+# app.conf
+# routes
 # swagger.yml
 ```
 
 Done! This will generate the routes on start-up and will begin to serve the Swagger-UI assets at `/@{basePath`
-See the [examples/swaggerapi](example project) and a complete introduction at module's [modules/swaggerapi/README.md](README.md).
-If you wish to serve your own Swagger-UI distribution, see the section on using [modules/swaggerapi/README.md#custom-ui](Static.Serve).
 
+See the [example project](examples/swaggerapi) and a complete introduction at module's [README.md](modules/swaggerapi/README.md).
+
+If you wish to serve your own Swagger-UI distribution, see the section on using [Static.Serve](modules/swaggerapi/README.md#custom-ui).
+
+**Note**: Currently you have to parse the contents of a c.Request.Body yourself. See [Item.Create](examples/swaggerapi/app/controller/items.go#L52) for an example.
 
 ### (Functional WIP) Swaggify
 

@@ -14,27 +14,32 @@ type SwaggerAPI struct {
 
 // ServeUI renders the template for your swagger-ui
 func (c SwaggerAPI) ServeUI(spec string) revel.Result {
-	c.RenderArgs["AssetsURL"] = c.Request.URL.Host + c.Request.URL.Path + spec
+	c.RenderArgs["SwaggerSpecURL"] = c.Request.URL.Host + c.Request.URL.Path + spec
 	return c.Render()
 }
 
 // ServeAssets serves swagger-ui assets
 func (c SwaggerAPI) ServeAssets(filepath string) revel.Result {
-	// TODO may not be windows friendly...
+	// TODO check into this since it may not be windows friendly...
+	// TODO make more secure
 	file, err := os.Open(fpath.Join(swaggerapi.ModulePath, filepath))
 	if err != nil {
 		return c.RenderError(err)
 	}
-
-	// TODO look into inline vs attachment
 	return c.RenderFile(file, revel.Inline)
 }
 
 // Spec serves the swagger-spec file
 func (c SwaggerAPI) Spec(spec string) revel.Result {
-	file, err := os.Open(spec)
+	filepath := swaggerapi.SpecPaths[spec]
+	if filepath == "" {
+		return c.NotFound("spec %s not found", spec)
+	}
+
+	file, err := os.Open(filepath)
 	if err != nil {
 		return c.RenderError(err)
 	}
+
 	return c.RenderFile(file, revel.Inline)
 }

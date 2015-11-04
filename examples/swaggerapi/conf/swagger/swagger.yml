@@ -5,8 +5,12 @@ info:
   version: 1.0.0
 host: localhost:9000
 basePath: /api
+tags:
+  - name: Item
 schemes:
   - http
+consumes:
+  - application/json
 produces:
   - application/json
 paths:
@@ -23,7 +27,9 @@ paths:
   /items:
     get:
       x-revel-controller-action: Items.List
-      description: List of all items
+      tags:
+        - Item
+      description: List of all items sorted by id
       responses:
         '200':
           schema:
@@ -32,12 +38,15 @@ paths:
               $ref: '#/definitions/Item'
     post:
       x-revel-controller-action: Items.Create
+      tags:
+        - Item
       description: Creates a new item with name `name`
       parameters:
         - in: body
-          name: name
-          description: the item's name
-          type: string
+          name: Item
+          description: Item object to create
+          schema:
+            $ref: '#/definitions/Item'
       responses:
         '200':
           schema:
@@ -45,6 +54,8 @@ paths:
   /items/{id}:
     get:
       x-revel-controller-action: Items.Read
+      tags:
+        - Item
       description: Read a new item with {id}
       parameters:
         - in: path
@@ -60,13 +71,15 @@ paths:
             $ref: '#/definitions/RevelError'
     put:
       x-revel-controller-action: Items.Update
+      tags:
+        - Item
       description: Updates a new item with {id}
       parameters:
         - in: path
           name: id
           description: the item's id
           type: integer
-        - in: body
+        - in: query
           name: name
           description: the item's new name
           type: string
@@ -79,6 +92,8 @@ paths:
             $ref: '#/definitions/RevelError'
     delete:
       x-revel-controller-action: Items.Delete
+      tags:
+        - Item
       description: Deletes a new item with {id}
       parameters:
         - in: path
@@ -108,3 +123,8 @@ definitions:
         type: string
   RevelError:
     type: object
+    properties:
+      title:
+        type: string
+      description:
+        type: string
