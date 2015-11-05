@@ -18,6 +18,5 @@ GET /@custom/swagger.json                       Static.Serve("conf/swagger","swa
 GET /@custom/                                   Static.Serve("public/swagger-ui/dist","index.html")
 GET /@custom/*filepath                          Static.Serve("public/swagger-ui/dist")
 
-# TODO this will break dynamically added routes
 # Catch all
-# *       /:controller/:action                    :controller.:action
+*       /:controller/:action                    :controller.:action

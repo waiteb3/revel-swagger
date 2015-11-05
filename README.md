@@ -10,6 +10,12 @@ go get github.com/waiteb3/revel-swagger/modules/...
 
 ### SwaggerAPI
 
+#### Introduction
+
+SwaggerAPI is a way to add routing based on a Swagger Specification file into your Revel project.
+
+#### Quickstart
+
 Add the module and spec locations to `app.conf`
 ```
 # Add the module
@@ -26,15 +32,19 @@ ls conf
 # swagger.yml
 ```
 
-Done! This will generate the routes on start-up and will begin to serve the Swagger-UI assets at `/@{basePath`
+Done! This will generate the routes on start-up and will begin to serve the Swagger-UI assets at `/@{basePath}`
 
 See the [example project](examples/swaggerapi) and a complete introduction at module's [README.md](modules/swaggerapi/README.md).
 
 If you wish to serve your own Swagger-UI distribution, see the section on using [Static.Serve](modules/swaggerapi/README.md#custom-ui).
 
-**Note**: Currently you have to parse the contents of a c.Request.Body yourself. See [Item.Create](examples/swaggerapi/app/controller/items.go#L52) for an example.
+**Note**: Currently you have to parse the contents of a c.Request.Body yourself. See [Item.Create](examples/swaggerapi/app/controllers/items.go#L51-L62) for an example.
 
 ### (Functional WIP) Swaggify
+
+#### Introduction
+
+Swaggify is a module that generates a Swagger Specification best-guess based on the source-code of your controllers (and hopefully models as well).
 
 Add the module to `conf/app.conf`
 ```
@@ -68,6 +78,6 @@ GET     /@api/editor                          SwaggerEditor.Serve("conf", "swagg
 
 ## Contributing
 Contributions are welcome in the form of issues or pull requests. Minor changes are fine,
-but for major changes, please open an empty pull request or raise an issue first.
+but for major changes, please open an empty pull request for discussion or raise an issue first.
 The last thing I want is for you to make a few hundred changes and then get told no.
 Suggestions and civil complaints are also fine in the form of an issue.
