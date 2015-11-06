@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"sort"
 
 	"github.com/revel/revel"
@@ -49,14 +48,14 @@ func (c Items) List() revel.Result {
 }
 
 // Create an item
-func (c Items) Create() revel.Result {
-	var item Item
-	err := json.NewDecoder(c.Request.Body).Decode(&item)
-	if err != nil {
-		c.RenderError(err)
-	}
+func (c Items) Create(item *Item) revel.Result {
+	// 	var item Item
+	// 	err := json.NewDecoder(c.Request.Body).Decode(&item)
+	// if err != nil {
+	// 	c.RenderError(err)
+	// }
 
-	ItemList = append(ItemList, item)
+	ItemList = append(ItemList, *item)
 	sort.Sort(ById(ItemList))
 	return c.RenderJson(item)
 }

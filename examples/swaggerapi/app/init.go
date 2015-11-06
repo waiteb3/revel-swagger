@@ -1,6 +1,9 @@
 package app
 
-import "github.com/revel/revel"
+import (
+	"github.com/revel/revel"
+	"github.com/waiteb3/revel-swagger/filters"
+)
 
 func init() {
 	// Filters is the default set of global filters.
@@ -16,7 +19,8 @@ func init() {
 		HeaderFilter,                  // Add some security based headers
 		revel.InterceptorFilter,       // Run interceptors around the action.
 		revel.CompressFilter,          // Compress the result.
-		revel.ActionInvoker,           // Invoke the action.
+		// revel.ActionInvoker,           // Invoke the action.
+		filters.SwaggerInvoker, // Swagger Invoker has the ability to bind structs from body content
 	}
 
 	// register startup functions with OnAppStart
