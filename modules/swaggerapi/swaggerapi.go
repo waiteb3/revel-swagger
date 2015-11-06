@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-swagger/go-swagger/spec"
 	"github.com/revel/revel"
+	"github.com/waiteb3/revel-swagger/modules/common"
 )
 
 // the extension for defined revel controller actions on swagger paths
@@ -46,6 +47,9 @@ func init() {
 
 				if revel.Config.BoolDefault("swaggerapi.add-ui", true) {
 					AddSwaggerUi(doc.BasePath(), config)
+					// conncurently download or unzip the swagger ui assets
+					// only runs once
+					go common.UnzipSwaggerAssets()
 				}
 
 				AddSwaggerRoutes(doc)
@@ -119,13 +123,6 @@ func AddSwaggerRoutes(doc *spec.Document) {
 // AddSwaggerUI inserts the routes for serving UIs at /@basePath/
 func AddSwaggerUi(basePath, filename string) {
 	basePath = insertAtSymbol(basePath)
-	module, ok := revel.ModuleByName("swaggerapi")
-	if !ok {
-		revel.ERROR.Fatalln(`Unable to find this module by its name 'swaggerapi'.
-Make sure that your import of the module in your 'app.conf' file is as below:
-
-    module.swaggerapi=github.com/waiteb3/revel-swagger/modules/swaggerapi`)
-	}
 
 	// GET /@{basePath}/{spec}   Static.Serve("{projPath}","conf/{spec}")
 	_fail(addRoute("Static.Serve", "GET", basePath+"/"+filename,
@@ -137,7 +134,7 @@ Make sure that your import of the module in your 'app.conf' file is as below:
 
 	// GET /@{basePath}/{spec}   Static.Serve("{modPath}/swagger-ui/dist")
 	_fail(addRoute("Static.Serve", "GET", basePath+"/*filepath",
-		filepath.Join(module.Path, "swagger-ui", "dist")))
+		common.SwaggerAssetsDir))
 }
 
 // adds a new route to the MainRouter

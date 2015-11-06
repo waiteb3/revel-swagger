@@ -3,12 +3,14 @@ Two drop in Revel modules for Swagger integration
 
 ## Modules quickstart
 
-First grab the modules
+First grab Revel, the modules, and swagger-spec library
 ```
+go get github.com/revel/cmd/revel
 go get github.com/waiteb3/revel-swagger/modules/...
+go get github.com/go-swagger/go-swagger/spec
 ```
 
-### SwaggerAPI
+### [SwaggerAPI](modules/swaggerapi)
 
 #### Introduction
 
@@ -40,11 +42,17 @@ If you wish to serve your own Swagger-UI distribution, see the section on using 
 
 **Note**: Currently you have to parse the contents of a c.Request.Body yourself. See [Item.Create](examples/swaggerapi/app/controllers/items.go#L51-L62) for an example.
 
-### (Functional WIP) Swaggify
+### [Swaggify](modules/swaggify)
 
 #### Introduction
 
-Swaggify is a module that generates a Swagger Specification best-guess based on the source-code of your controllers (and hopefully models as well).
+Swaggify is a module that generates a Swagger Specification best-guess based on the source-code of your controllers.
+Integration with models is planned as well.
+
+Note: This is currently a WIP, although it is functional. It will generate a specification,
+but it relies on a number of assumptions and lacks of finesse, althought comment overrides are planned)
+
+#### Quickstart
 
 Add the module to `conf/app.conf`
 ```
@@ -58,9 +66,10 @@ Drop the endpoints into `conf/routes`
 GET     /@api/swagger.json                      Swaggify.Spec("/api")
 # Serve the default swagger-ui based on the prefix ("/api")
 GET     /@api/	                                Swaggify.ServeUI("/api")
-GET     /@api/*filepath                         Swaggify.ServeAssets("/api")
+GET     /@api/*filepath                         Swaggify.ServeAssets
 ```
 
+And now you have external documentation at [http://localhost:9000/@api/](http://localhost:9000/@api/).
 
 ### (Planned/Maybe) Editor
 

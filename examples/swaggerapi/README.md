@@ -13,6 +13,7 @@ For all of the module's more complete details and instructions, go to the [modul
 ```
 go get github.com/revel/cmd/revel
 go get github.com/waiteb3/revel-swagger/examples/swaggerapi/...
+go get github.com/go-swagger/go-swagger/spec
 revel run github.com/waiteb3/revel-swagger/examples/swaggerapi
 ```
 

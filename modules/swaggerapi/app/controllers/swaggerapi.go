@@ -11,6 +11,6 @@ type SwaggerAPI struct {
 
 // ServeUI renders the template for your swagger-ui
 func (c SwaggerAPI) ServeUI(spec string) revel.Result {
-	c.RenderArgs["SwaggerSpecURL"] = c.Request.URL.Host + c.Request.URL.Path + spec
+	c.RenderArgs["SwaggerSpecURL"] = c.Request.URL.Path + spec
 	return c.Render()
 }

@@ -2,12 +2,75 @@
 
 ## Instructions
 
-First grab Revel then the module. See [revel.github.io](revel.github.io) on more details
+### Installation
+
+First grab Revel then the module and its dependency. See [revel.github.io](revel.github.io) on more details
 about the revel project.
 ```
 go get github.com/revel/cmd/revel
 go get github.com/waiteb3/revel-swagger/...
+go get github.com/go-swagger/go-swagger/spec
 ```
+
+### Adding a SwaggerAPI route and controller
+
+First define your Revel controller and its actions which will map to your operations
+```go
+// app/controllers/api.go
+package controllers
+
+import (
+	"github.com/revel/revel"
+)
+
+type APIController struct {
+	*revel.Controller
+}
+
+func (c APIController) ListTags(slug string) {
+	// get a set of tags for an article identified by slug
+}
+
+func (c APIController) AddTag(slug, tag string) {
+	// add a new tag to your article identified by slug
+}
+```
+
+Then inside your Swagger specification, for each [Operation Object](http://swagger.io/specification/#operationObject)
+add an `x-revel-controller-action:` property that declares which action an operation should be tied to.
+```yml
+swagger: "2.0"
+#
+# Metadata
+#
+paths:
+  # Path Item
+  /articles/{slug}:
+    # Paramters for all operations on this path
+    parameters:
+      - in: path
+        name: slug
+        description: Article slug
+        type: string
+        required: true
+
+    # Swagger operations for this path
+    get:
+      x-revel-controller-action: APIController.ListTags
+      # responses &etc
+    post:
+      x-revel-controller-action: APIController.AddTag
+      parameters:
+        # This would correspond to an Admin page's submission form
+        - in: formData
+          name: tag
+          description: Tag to be added to an article
+          type: string
+          required: true
+      # responses &etc
+```
+
+Now you have two API endpoints that are automatically routed and parsed by Revel and SwaggerAPI.
 
 ### SwaggerAPI Configuration
 

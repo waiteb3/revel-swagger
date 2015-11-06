@@ -10,9 +10,10 @@ module:testrunner
 # This will serve the generated swagger spec built from from any route with
 # a basePath of "/api" and spec accessible at "/@api/swagger.json"
 GET     /@api/swagger.json                      Swaggify.Spec("/api")
-# Serve the default swagger-ui based on the prefix ("/api")
+
+# Serve the default swagger-ui
 GET     /@api/                                  Swaggify.ServeUI("/api")
-GET     /@api/*filepath                         Swaggify.ServeAssets("/api")
+GET     /@api/*filepath                         Swaggify.ServeAssets
 
 ###########################
 #  Custom Swagger Assets  #

@@ -2,57 +2,45 @@ package swaggify
 
 import (
 	"fmt"
-	"path"
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/go-swagger/go-swagger/spec"
 	"github.com/revel/cmd/harness"
 	"github.com/revel/revel"
+	"github.com/waiteb3/revel-swagger/modules/common"
 )
 
-var ModulePath string
-var AssetsPath string
-var ViewsPath string
 var APIs = make(map[string]*spec.Swagger)
 
-// TODO try to add manual defintion override identified by something like x-revel-controller.yml or comments or ????
-
+// TODO try to add manual defintion override identified by something in the comments
 // TODO interceptor for getting statistics on endpoints
-// TODO create filter (maybe)
-var ContentTypes = []string{"application/json", "application/xml"}
+// TODO detect what types were produced
+var ContentTypes = []string{"application/json"}
 
 func init() {
-	_, ModulePath, _, _ = runtime.Caller(1)
-	ModulePath = path.Dir(ModulePath)
-	AssetsPath = filepath.Join(ModulePath, "swagger-ui", "dist")
-	ViewsPath = filepath.Join(ModulePath, "app", "views")
+	revel.OnAppStart(func() {
+		go common.UnzipSwaggerAssets()
+		// build IndexArgs for rendering index template
 
-	revel.OnAppStart(start)
-}
-
-func start() {
-	// build IndexArgs for rendering index template
-
-	// collect all of the swagger-endpoints then build the spec
-	routes := make([]*revel.Route, 0)
-	for _, route := range revel.MainRouter.Routes {
-		if strings.ToLower(route.Action) == "swaggify.spec" {
-			routes = append(routes, route)
-		}
-	}
-
-	for _, route := range routes {
-		// TODO test what cases cause bounds panic
-		// Don't duplicate building API specs
-		if _, exists := APIs[route.FixedParams[0]]; exists {
-			continue
+		// collect all of the swagger-endpoints then build the spec
+		routes := make([]*revel.Route, 0)
+		for _, route := range revel.MainRouter.Routes {
+			if strings.ToLower(route.Action) == "swaggify.spec" {
+				routes = append(routes, route)
+			}
 		}
 
-		APIs[route.FixedParams[0]] = newSpec(route.FixedParams[0])
-		fmt.Println(APIs[route.FixedParams[0]])
-	}
+		for _, route := range routes {
+			// TODO test what cases cause bounds panic
+			// Don't duplicate building API specs
+			if _, exists := APIs[route.FixedParams[0]]; exists {
+				continue
+			}
+
+			APIs[route.FixedParams[0]] = newSpec(route.FixedParams[0])
+			fmt.Println(APIs[route.FixedParams[0]])
+		}
+	})
 }
 
 func newSpec(endpoint string) *spec.Swagger {
@@ -77,10 +65,10 @@ func newSpec(endpoint string) *spec.Swagger {
 	api.Info.License.Name = "LICENSE"
 	api.Info.License.URL = "URL"
 
-	// TODO change lols
-	api.Host = "localhost:9000"
+	// Now is added on requests to Swaggify.Spec
+
 	// TODO check if https is HSTS exclusively or no for revel
-	// ALSO this can be SSL terminated by proxy so this may need changing
+	// TODO ALSO this can be SSL terminated by proxy so this may need changing
 	if revel.HttpSsl {
 		api.Schemes = []string{"https"}
 	} else {
