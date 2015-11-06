@@ -3,9 +3,11 @@ Two drop in Revel modules for Swagger integration
 
 ## Modules quickstart
 
-First grab the modules
+First grab Revel, the modules, and swagger-spec library
 ```
+go get github.com/revel/cmd/revel
 go get github.com/waiteb3/revel-swagger/modules/...
+go get github.com/go-swagger/go-swagger/spec
 ```
 
 ### SwaggerAPI
@@ -58,7 +60,7 @@ Drop the endpoints into `conf/routes`
 GET     /@api/swagger.json                      Swaggify.Spec("/api")
 # Serve the default swagger-ui based on the prefix ("/api")
 GET     /@api/	                                Swaggify.ServeUI("/api")
-GET     /@api/*filepath                         Swaggify.ServeAssets("/api")
+GET     /@api/*filepath                         Swaggify.ServeAssets
 ```
 
 
