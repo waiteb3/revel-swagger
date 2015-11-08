@@ -124,6 +124,7 @@ func buildPaths(endpoint string) *spec.Paths {
 				path.Put = path.Head
 				path.Delete = path.Head
 				path.Patch = path.Head
+				path.Options = path.Head
 			default:
 				panic("Invalid Request type ?? " + route.Method)
 			}
@@ -134,6 +135,7 @@ func buildPaths(endpoint string) *spec.Paths {
 	return paths
 }
 
+// build an operation object based on the route information
 func buildOperation(route *revel.Route) *spec.Operation {
 	var (
 		typeInfo   *harness.TypeInfo
@@ -161,11 +163,12 @@ func buildOperation(route *revel.Route) *spec.Operation {
 
 	op := new(spec.Operation)
 	// TODO op.Description
-	// this will probably require either editing harness.ProcessSource to also grab comments OR
-	// to copy that functionality and modify it
+	// this will probably require extending harness.ProcessSource to parse comments
 	op.Consumes = ContentTypes
 	op.Produces = ContentTypes
-	op.AddExtension("x-revel-action", route.Action)
+	op.AddExtension("x-revel-controller-action", route.Action)
+
+	op.Tags = []string{trimControllerName(route.ControllerName)}
 
 	for i, arg := range methodSpec.Args {
 		// skip over fixed paramters that match up to the arguments
@@ -182,7 +185,7 @@ func buildOperation(route *revel.Route) *spec.Operation {
 		if i < count {
 			param.In = "path"
 		} else {
-			param.In = "body"
+			param.In = "formData"
 		}
 		op.Parameters = append(op.Parameters, param)
 	}
@@ -210,6 +213,17 @@ func buildOperation(route *revel.Route) *spec.Operation {
 	*/
 
 	return op
+}
+
+// Trim off "Controller(s)" from the ControllerName to use as a tag
+var trimControllerName = func(name string) string {
+	if strings.HasSuffix(strings.ToLower(name), "controller") {
+		return name[:len(name)-len("controller")]
+	}
+	if strings.HasSuffix(strings.ToLower(name), "controllers") {
+		return name[:len(name)-len("controllers")]
+	}
+	return name
 }
 
 // TODO Parse the models and contollers for potential definitions?

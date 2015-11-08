@@ -23,5 +23,7 @@ _testmain.go
 *.test
 *.prof
 
-# vim swp files
+# editor files
 *.swp
+*.iml
+.idea/
