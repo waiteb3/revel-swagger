@@ -28,12 +28,12 @@ GET     /@api/*filepath                         Swaggify.ServeAssets
 ##########################
 #       API routes       #
 ##########################
-GET     /api/items                              ItemController.List
-POST    /api/items                              ItemController.Create
-GET     /api/item/:id                           ItemController.Get
-PUT     /api/item/:id                           ItemController.Update
-DELETE  /api/item/:id                           ItemController.Delete
-PATCH   /api/item/:id                           ItemController.Modify
+GET     /api/items                              ItemsController.List
+POST    /api/items                              ItemsController.Create
+GET     /api/item/:id                           ItemsController.Get
+PUT     /api/item/:id                           ItemsController.Update
+DELETE  /api/item/:id                           ItemsController.Delete
+PATCH   /api/item/:id                           ItemsController.Modify
 
 ###########################
 #   Serve UI from index   #

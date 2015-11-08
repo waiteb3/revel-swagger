@@ -1,7 +1,6 @@
 package swaggify
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-swagger/go-swagger/spec"
@@ -22,25 +21,29 @@ func init() {
 		go common.UnzipSwaggerAssets()
 		// build IndexArgs for rendering index template
 
-		// collect all of the swagger-endpoints then build the spec
-		routes := make([]*revel.Route, 0)
-		for _, route := range revel.MainRouter.Routes {
-			if strings.ToLower(route.Action) == "swaggify.spec" {
-				routes = append(routes, route)
-			}
-		}
-
-		for _, route := range routes {
-			// TODO test what cases cause bounds panic
-			// Don't duplicate building API specs
-			if _, exists := APIs[route.FixedParams[0]]; exists {
-				continue
-			}
-
-			APIs[route.FixedParams[0]] = newSpec(route.FixedParams[0])
-			fmt.Println(APIs[route.FixedParams[0]])
-		}
+		// this can be done async
+		go start()
 	})
+}
+
+func start() {
+	// collect all of the swagger-endpoints then build the spec
+	routes := make([]*revel.Route, 0)
+	for _, route := range revel.MainRouter.Routes {
+		if strings.ToLower(route.Action) == "swaggify.spec" {
+			routes = append(routes, route)
+		}
+	}
+
+	for _, route := range routes {
+		// TODO test what cases cause bounds panic
+		// Don't duplicate building API specs
+		if _, exists := APIs[route.FixedParams[0]]; exists {
+			continue
+		}
+
+		APIs[route.FixedParams[0]] = newSpec(route.FixedParams[0])
+	}
 }
 
 func newSpec(endpoint string) *spec.Swagger {
@@ -78,15 +81,21 @@ func newSpec(endpoint string) *spec.Swagger {
 	api.Consumes = ContentTypes
 	api.Produces = ContentTypes
 
+	info, rerr := harness.ProcessSource(revel.CodePaths)
+	if rerr != nil {
+		panic(rerr) // TODO EMPTY PANIC
+	}
+
+
 	// the Swagger type hoists unexported types for some annoying reason
-	api.Paths = buildPaths(api.BasePath)
-	api.Definitions = buildDefinitions(api.BasePath)
+	api.Paths = buildPaths(api.BasePath, info)
+	api.Definitions = buildDefinitions(api.BasePath, info)
 
 	return api
 }
 
 // buildPaths of a swagger spec based on the parsed revel routes and the basePath
-func buildPaths(endpoint string) *spec.Paths {
+func buildPaths(endpoint string, info *harness.SourceInfo) *spec.Paths {
 	paths := new(spec.Paths)
 
 	paths.Paths = make(map[string]spec.PathItem)
@@ -96,29 +105,28 @@ func buildPaths(endpoint string) *spec.Paths {
 		if strings.HasPrefix(route.Path, endpoint) {
 			swaggerPath := curlify(endpoint, route.Path)
 			// match only routes in the endpoint
-			fmt.Println()
-			fmt.Println("endpoint", route)
+			revel.INFO.Println("Generated docs for endpoint ", route)
 
 			// missing values returns an empty struct
 			path := paths.Paths[swaggerPath]
 			// TODO MAYBE path.Extensions
 			switch strings.ToUpper(route.Method) {
 			case "HEAD":
-				path.Head = buildOperation(route)
+				path.Head = buildOperation(route, info)
 			case "GET":
-				path.Get = buildOperation(route)
+				path.Get = buildOperation(route, info)
 			case "POST":
-				path.Post = buildOperation(route)
+				path.Post = buildOperation(route, info)
 			case "PUT":
-				path.Put = buildOperation(route)
+				path.Put = buildOperation(route, info)
 			case "DELETE":
-				path.Delete = buildOperation(route)
+				path.Delete = buildOperation(route, info)
 			case "PATCH":
-				path.Patch = buildOperation(route)
+				path.Patch = buildOperation(route, info)
 			case "OPTIONS":
-				path.Options = buildOperation(route)
+				path.Options = buildOperation(route, info)
 			case "*":
-				path.Head = buildOperation(route)
+				path.Head = buildOperation(route, info)
 				path.Get = path.Head
 				path.Post = path.Head
 				path.Put = path.Head
@@ -136,16 +144,11 @@ func buildPaths(endpoint string) *spec.Paths {
 }
 
 // build an operation object based on the route information
-func buildOperation(route *revel.Route) *spec.Operation {
+func buildOperation(route *revel.Route, info *harness.SourceInfo) *spec.Operation {
 	var (
 		typeInfo   *harness.TypeInfo
 		methodSpec *harness.MethodSpec
 	)
-
-	info, rerr := harness.ProcessSource(revel.CodePaths)
-	if rerr != nil {
-		panic(rerr) // TODO EMPTY PANIC
-	}
 
 	// get the TypeInfo and MethodSpec for this route
 	for _, cinfo := range info.ControllerSpecs() {
@@ -171,7 +174,7 @@ func buildOperation(route *revel.Route) *spec.Operation {
 	op.Tags = []string{trimControllerName(route.ControllerName)}
 
 	for i, arg := range methodSpec.Args {
-		// skip over fixed paramters that match up to the arguments
+		// skip over fixed paramters
 		if i < len(route.FixedParams) {
 			continue
 		}
@@ -190,7 +193,7 @@ func buildOperation(route *revel.Route) *spec.Operation {
 		op.Parameters = append(op.Parameters, param)
 	}
 
-	// TODO RenderCalls
+	// TODO parse Render Calls (ProcessSource may be doing this wrong)
 	// fmt.Printf("route:       %#v\n", route)
 	// fmt.Printf("typeInfo:    %#v\n", typeInfo)
 	// fmt.Printf("methodSpec: %#v\n", methodSpec)
@@ -227,7 +230,7 @@ var trimControllerName = func(name string) string {
 }
 
 // TODO Parse the models and contollers for potential definitions?
-func buildDefinitions(endpoint string) spec.Definitions {
+func buildDefinitions(endpoint string, info *harness.SourceInfo) spec.Definitions {
 	def := spec.Definitions{}
 
 	// TODO
