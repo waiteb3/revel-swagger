@@ -1,3 +1,6 @@
+# UNSUPPORTED
+Sorry, but this module is unsupported and I won't be updating it. It's much too out of date for Revel's API and Go's lack of a package manager is also a problem for regular maintenance. I will accept well tested pull requests but won't make any changes myself.
+
 # Revel-Swagger
 Two drop in Revel modules for Swagger integration
 
